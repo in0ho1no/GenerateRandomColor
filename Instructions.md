@@ -17,10 +17,6 @@ Dockerコンテナ上の環境で作業するために必要となる拡張機�
     ms-vscode.remote-server
     ms-vscode.remote-explorer
 
-テンプレ環境でエラーが発生するので以下拡張機能も追加しておく
-v
-    amodio.tsl-problem-matcher
-
 ### docker起動
 
 予めDockerのサービスを起動しておく。  
