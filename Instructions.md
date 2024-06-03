@@ -68,3 +68,19 @@ DockerImageが存在しないときに必要となる手順。
     git branch -M main
     git remote add origin <接続するリポジトリ名>
     git push -u origin main
+
+## プロジェクト作成
+
+プロジェクトのテンプレとなる環境を作成する
+
+    yo code
+
+選択肢は以下とした。
+
+    ? What type of extension do you want to create? New Extension (TypeScript)
+    ? What's the name of your extension? Generate Random Color
+    ? What's the identifier of your extension? generate-random-color
+    ? What's the description of your extension? This extension generate random color.
+    ? Initialize a git repository? No
+    ? Which bundler to use? webpack
+    ? Which package manager to use? npm
