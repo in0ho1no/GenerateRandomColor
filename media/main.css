@@ -1,0 +1,49 @@
+body {
+	background-color: transparent;
+}
+
+.color-list {
+	list-style: none;
+	padding: 0;
+}
+
+.color-entry {
+	width: 100%;
+	display: flex;
+	margin-bottom: 0.4em;
+	border: 1px solid var(--vscode-input-border);
+}
+
+.color-preview {
+	width: 2em;
+	height: 2em;
+	/* border-right: 2px solid black; */
+	margin-right: 2px;
+}
+
+.color-preview:hover {
+  outline: inset white;
+  outline-width: 1pt;
+}
+
+.sample-text {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-right: 2px;
+}
+
+.add-color-button {
+	display: block;
+	border: none;
+	margin: 3px auto;
+}
+
+.swap-color {
+	width: 2em;
+	height: 2em;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
