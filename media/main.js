@@ -3,9 +3,9 @@
 // This script will be run within the webview itself
 // It cannot access the main VS Code APIs directly.
 (function () {
-    // 16進カラーコードの長さ
+    // 16進色コードの長さ
     const COLOR_STRING_MAX_LEN = 6;
-    // カラーリストの最大数
+    // 色リストの最大数
     const MAX_COLOR_LIST = 10;
 
     // VS Code APIを取得
@@ -49,7 +49,7 @@
     createColorList(colors);
 
     /**
-     * カラー追加ボタンを作成する。
+     * 色追加ボタンを作成する。
      */
     function createAddColorButton() {
         const addBtn = document.querySelector('.add-color-button');
@@ -62,23 +62,13 @@
     }
 
     /**
-     * @param {Array<{ value: string }>} colors
+     * 色入力フィールドを作成する。
+     * フィールドの背景色は入力された色コードとなる。
+     * フィールドの文字色は入力された色コードの補色となる。
+     * @param {string} color - 16進文字列6桁の色コード 'RRGGBB'
+     * @returns {HTMLInputElement} - 作成された色入力フィールド
      */
-    function createColorList(colors) {
-        createColorInput('000000');
-        updateColorList(colors);
-    }
-
-    /**
-     * @param {string} color
-     */
-    function createColorInput(color) {
-        const ul = document.querySelector('.field-list');
-        if (null === ul) {
-            return;
-        }
-        ul.textContent = '';
-
+    function createInputColorField(color) {
         const input = document.createElement('input');
         input.className = 'color-input';
         input.type = 'text';
@@ -90,10 +80,92 @@
             const target = e.target;
             if (target instanceof HTMLInputElement) {
                 const convColor = convInput2HexColor(target.value);
-                createColorInput(convColor);
+                updateInputList(convColor);
             }
         });
-        ul.appendChild(input);
+        return input;
+    }
+
+    /**
+     * 色プレビュー領域を作成する
+     * @param {string} color - 16進文字列6桁の色コード 'RRGGBB'
+     * @returns {HTMLDivElement} - 作成された色プレビュー領域
+     */
+    function createColorPreview(color){
+        const colorPreview = document.createElement('div');
+        colorPreview.className = 'color-preview';
+        colorPreview.style.backgroundColor = `#${color}`;
+        colorPreview.addEventListener('click', () => {
+            onColorClicked(color);
+            navigator.clipboard.writeText(color);
+        });
+        return colorPreview;
+    }
+
+    /**
+     * サンプルテキスト領域を作成する
+     * @param {string} colorBG - 背景色とする16進文字列6桁の色コード 'RRGGBB'
+     * @param {string} colorTXT - 文字色とする16進文字列6桁の色コード 'RRGGBB'
+     * @returns {HTMLDivElement} - 作成されたテキストプレビュー領域
+     */
+    function createTextPreview(colorBG, colorTXT){
+        const sampleText = document.createElement('div');
+        sampleText.className = 'sample-text';
+        sampleText.style.backgroundColor = `#${colorBG}`;
+        sampleText.style.color = `#${colorTXT}`;
+        sampleText.textContent = 'ABCサンプル123';
+        // テキストを選択禁止にする
+        sampleText.addEventListener('selectstart', (event) => {
+            event.preventDefault();
+        });
+        return sampleText;
+    }
+
+    /**
+     * 色入れ替えボタンを作成する
+     * @param {HTMLDivElement} textField - 背景色と前景色を入れ替えたいテキストフィールド
+     * @returns {HTMLDivElement} - 作成された入れ替えボタン
+     */
+    function createSwapColorButton(textField){
+        const swapColor = document.createElement('div');
+        swapColor.className = 'swap-color';
+        swapColor.style.backgroundColor = textField.style.backgroundColor;
+        swapColor.style.color = textField.style.color;
+        swapColor.textContent = '⇔';
+        swapColor.addEventListener('click', () => {
+            const tempSwap = textField.style.backgroundColor;
+            textField.style.backgroundColor = textField.style.color;
+            textField.style.color = tempSwap;
+        });
+        // テキストを選択禁止にする
+        swapColor.addEventListener('selectstart', (event) => {
+            event.preventDefault();
+        });
+        return swapColor;
+    }
+
+    /**
+     * @param {Array<{ value: string }>} colors
+     */
+    function createColorList(colors) {
+        updateInputList('000000');
+        updateColorList(colors);
+    }
+
+    /**
+     * 任意の色コードによる色の生成欄を設ける
+     * @param {string} color
+     */
+    function updateInputList(color) {
+        const ul = document.querySelector('.field-list');
+        if (null === ul) {
+            return;
+        }
+        ul.textContent = '';
+
+        const inputColorField = createInputColorField(color);
+
+        ul.appendChild(inputColorField);
     }
 
     /**
@@ -104,10 +176,10 @@
         if (null === ul) {
             return;
         }
-
         ul.textContent = '';
+
         for (const [index, color] of colors.entries()) {
-            // 2色ずつ利用するので即continueする
+            // 2色ずつ利用する
             if (1 === (index % 2)) {
                 continue;
             }
@@ -118,55 +190,22 @@
             const li = document.createElement('li');
             li.className = 'color-entry';
 
-            const colorPreviewBG = document.createElement('div');
-            colorPreviewBG.className = 'color-preview';
-            colorPreviewBG.style.backgroundColor = `#${colorBG}`;
-            colorPreviewBG.addEventListener('click', () => {
-                onColorClicked(colorBG);
-                navigator.clipboard.writeText(colorBG);
-            });
+            const colorPreviewBG = createColorPreview(colorBG);
             li.appendChild(colorPreviewBG);
 
-            const colorPreviewTXT = document.createElement('div');
-            colorPreviewTXT.className = 'color-preview';
-            colorPreviewTXT.style.backgroundColor = `#${colorTxT}`;
-            colorPreviewTXT.addEventListener('click', () => {
-                onColorClicked(colorTxT);
-                navigator.clipboard.writeText(colorTxT);
-            });
+            const colorPreviewTXT = createColorPreview(colorTxT);
             li.appendChild(colorPreviewTXT);
 
-            const sampleText = document.createElement('div');
-            sampleText.className = 'sample-text';
-            sampleText.style.backgroundColor = colorPreviewBG.style.backgroundColor;
-            sampleText.style.color = colorPreviewTXT.style.backgroundColor;
-            sampleText.textContent = 'ABCサンプル123';
-            // テキストを選択禁止にする
-            sampleText.addEventListener('selectstart', (event) => {
-                event.preventDefault();
-            });
-            li.appendChild(sampleText);
+            const textPreview = createTextPreview(colorBG, colorTxT);
+            li.appendChild(textPreview);
 
-            const swapColor = document.createElement('div');
-            swapColor.className = 'swap-color';
-            swapColor.style.backgroundColor = colorPreviewBG.style.backgroundColor;
-            swapColor.style.color = colorPreviewTXT.style.backgroundColor;
-            swapColor.textContent = '⇔';
-            swapColor.addEventListener('click', () => {
-                const tempSwap = sampleText.style.backgroundColor;
-                sampleText.style.backgroundColor = sampleText.style.color;
-                sampleText.style.color = tempSwap;
-            });
-            // テキストを選択禁止にする
-            swapColor.addEventListener('selectstart', (event) => {
-                event.preventDefault();
-            });
-            li.appendChild(swapColor);
+            const swapColorButton = createSwapColorButton(textPreview);
+            li.appendChild(swapColorButton);
 
             ul.appendChild(li);
         }
 
-        // Update the saved state
+        // 色リストを更新する
         vscode.setState({ colors: colors });
     }
 
