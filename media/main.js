@@ -14,9 +14,12 @@
 
     createColorList(colors);
 
-    document.querySelector('.add-color-button').addEventListener('click', () => {
-        genColor();
-    });
+    const addBtn = document.querySelector('.add-color-button');
+    if (null !== addBtn) {
+        addBtn.addEventListener('click', () => {
+            genColor();
+        });
+    }
 
     // Handle messages sent from the extension to the webview
     window.addEventListener('message', event => {
@@ -41,7 +44,58 @@
      * @param {Array<{ value: string }>} colors
      */
     function createColorList(colors) {
+        createColorInput('000000');
         updateColorList(colors);
+    }
+
+    /**
+     * @param {string} color
+     */
+    function createColorInput(color) {
+        const ul = document.querySelector('.field-list');
+        if (null === ul) {
+            return;
+        }
+        ul.textContent = '';
+
+        const input = document.createElement('input');
+        input.className = 'color-input';
+        input.type = 'text';
+        input.maxLength = MAX_LEN_COLOR + 1;
+        input.value = color;
+        input.style.backgroundColor = `#${color}`;
+        input.style.color = `#${getComplementaryColor(color)}`;
+        input.addEventListener('change', (e) => {
+            const target = e.target;
+            if (target instanceof HTMLInputElement) {
+                const convColor = convInput2HexColor(target.value);
+                createColorInput(convColor);
+            }
+        });
+        ul.appendChild(input);
+    }
+
+    // 入力された文字列を、16進色コードとして解釈可能な文字列に変換して返す
+    /**
+     * @param {string} inputStr
+     */
+    function convInput2HexColor(inputStr) {
+        let valueConv = inputStr;
+        if (!valueConv) {
+            // Treat empty value as delete
+            valueConv = "000000";
+        }
+
+        // Replace non-hexadecimal characters with empty strings
+        valueConv = valueConv.replace(/[^0-9A-Fa-f]/g, '');
+
+        // Limit string to 6 characters
+        if (MAX_LEN_COLOR < valueConv.length) {
+            valueConv = valueConv.substring(0, MAX_LEN_COLOR);
+        } else {
+            valueConv = valueConv.padStart(MAX_LEN_COLOR, '0');
+        }
+        return valueConv;
     }
 
     /**
