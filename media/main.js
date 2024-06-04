@@ -3,31 +3,33 @@
 // This script will be run within the webview itself
 // It cannot access the main VS Code APIs directly.
 (function () {
-    const MAX_LEN_COLOR = 6;
+    // 16進カラーコードの長さ
+    const COLOR_STRING_MAX_LEN = 6;
+    // カラーリストの最大数
+    const MAX_COLOR_LIST = 10;
+
+    // VS Code APIを取得
     // @ts-ignore
     const vscode = acquireVsCodeApi();
 
+    // 保存された状態を取得し、存在しない場合は初期化
     const oldState = vscode.getState() || { colors: [] };
 
-    /** @type {Array<{ value: string }>} */
+    /**
+     * 色のリスト
+     * @type {Array<{ value: string }>}
+     */
     let colors = oldState.colors;
 
-    createColorList(colors);
-
-    const addBtn = document.querySelector('.add-color-button');
-    if (null !== addBtn) {
-        addBtn.addEventListener('click', () => {
-            genColor();
-        });
-    }
-
-    // Handle messages sent from the extension to the webview
+    /**
+     * 拡張機能からWebviewへのメッセージを処理するイベントリスナーを追加
+     */
     window.addEventListener('message', event => {
-        const message = event.data; // The json data that the extension sent
+        const message = event.data;
         switch (message.type) {
             case 'genColor':
                 {
-                    genColor();
+                    generateColorPair();
                     break;
                 }
             case 'clearColors':
@@ -39,6 +41,25 @@
 
         }
     });
+
+    // 色追加ボタンを用意
+    createAddColorButton();
+
+    // 色リストを作成
+    createColorList(colors);
+
+    /**
+     * カラー追加ボタンを作成する。
+     */
+    function createAddColorButton() {
+        const addBtn = document.querySelector('.add-color-button');
+        if (null !== addBtn) {
+            // クリックイベントを追加する
+            addBtn.addEventListener('click', () => {
+                generateColorPair();
+            });
+        }
+    }
 
     /**
      * @param {Array<{ value: string }>} colors
@@ -61,7 +82,7 @@
         const input = document.createElement('input');
         input.className = 'color-input';
         input.type = 'text';
-        input.maxLength = MAX_LEN_COLOR + 1;
+        input.maxLength = COLOR_STRING_MAX_LEN + 1;
         input.value = color;
         input.style.backgroundColor = `#${color}`;
         input.style.color = `#${getComplementaryColor(color)}`;
@@ -73,29 +94,6 @@
             }
         });
         ul.appendChild(input);
-    }
-
-    // 入力された文字列を、16進色コードとして解釈可能な文字列に変換して返す
-    /**
-     * @param {string} inputStr
-     */
-    function convInput2HexColor(inputStr) {
-        let valueConv = inputStr;
-        if (!valueConv) {
-            // Treat empty value as delete
-            valueConv = "000000";
-        }
-
-        // Replace non-hexadecimal characters with empty strings
-        valueConv = valueConv.replace(/[^0-9A-Fa-f]/g, '');
-
-        // Limit string to 6 characters
-        if (MAX_LEN_COLOR < valueConv.length) {
-            valueConv = valueConv.substring(0, MAX_LEN_COLOR);
-        } else {
-            valueConv = valueConv.padStart(MAX_LEN_COLOR, '0');
-        }
-        return valueConv;
     }
 
     /**
@@ -172,50 +170,80 @@
         vscode.setState({ colors: colors });
     }
 
-    /** 
-     * @param {string} color 
+    /**
+     * 入力された文字列を、16進文字列6桁の色コードに変換して返す。
+     * 入力が空の場合は '000000' を返す。
+     * @param {string} inputStr - 入力された文字列
+     * @returns {string} 変換された16進文字列6桁の色コード
+     */
+    function convInput2HexColor(inputStr) {
+        if (!inputStr) {
+            return '000000';
+        }
+
+        // 16進数以外の文字を空文字に置き換える。
+        let valueConv = inputStr.replace(/[^0-9A-Fa-f]/g, '');
+
+        // 16進文字列6桁にする
+        valueConv = valueConv.substring(0, COLOR_STRING_MAX_LEN).padStart(COLOR_STRING_MAX_LEN, '0');
+        return valueConv;
+    }
+
+    /**
+     * 色がクリックされたときにメッセージを表示する
+     * @param {string} color - 選択された16進文字列の色コード
      */
     function onColorClicked(color) {
         vscode.postMessage({ type: 'colorSelected', value: color });
     }
 
-    function genColor() {
-        if (10 > (colors.length / 2)) {
-            const rndmColor = getRandomColor();
-            colors.push({ value: rndmColor });
-            colors.push({ value: getComplementaryColor(rndmColor) });
+    /**
+     * ランダムな色とその補色からなるペアを生成してリストに追加する
+     */
+    function generateColorPair() {
+        if (MAX_COLOR_LIST*2 > colors.length) {
+            const randomColor = getRandomColor();
+            colors.push({ value: randomColor });
+            colors.push({ value: getComplementaryColor(randomColor) });
             updateColorList(colors);
         }
     }
 
     /**
-     * @returns string
+     * ランダムな色コードを取得する。
+     * @returns {string} 16進文字列6桁の色コード 'RRGGBB'
      */
     function getRandomColor() {
-        // 0から255までのランダムな整数を生成し、それを16進数形式に変換
-        const r = Math.floor(Math.random() * 256).toString(16).padStart(2, '0');
-        const g = Math.floor(Math.random() * 256).toString(16).padStart(2, '0');
-        const b = Math.floor(Math.random() * 256).toString(16).padStart(2, '0');
-        // 16進数形式のRGB値を合成してCSS形式の色コードに変換
-        const color = `${r}${g}${b}`;
-        return color;
+        /**
+         * 0から255までのランダムな整数を生成
+         * 16進文字列に変換
+         * 0パティングにより最低2文字の文字列とする
+         * @returns {string} ランダムな16進文字列2桁
+         */
+        function getRandomHex() {
+            return Math.floor(Math.random() * 256).toString(16).padStart(2, '0');
+        }
+        const r = getRandomHex();
+        const g = getRandomHex();
+        const b = getRandomHex();
+        return `${r}${g}${b}`;
     }
 
     /**
-     * @returns string
+     * 指定した色コードの補色を取得する。
+     * @param {string} hexColor - 16進文字列6桁の色コード 'RRGGBB'
+     * @returns {string} 16進文字列6桁の補色 'RRGGBB'.
      */
     function getComplementaryColor(hexColor) {
-        // 16進数形式の色コードをRGBに変換
-        const r = parseInt(hexColor.substring(1, 3), 16);
-        const g = parseInt(hexColor.substring(3, 5), 16);
-        const b = parseInt(hexColor.substring(5, 7), 16);
-    
-        // 補色を計算
-        const complementaryR = 255 - r;
-        const complementaryG = 255 - g;
-        const complementaryB = 255 - b;
-        const complementaryHexColor = `${complementaryR.toString(16).padStart(2, '0')}${complementaryG.toString(16).padStart(2, '0')}${complementaryB.toString(16).padStart(2, '0')}`;
-        return complementaryHexColor.toUpperCase(); // 補色を返す（大文字）
+        // RGB各要素を16進文字列から10進数値に変換
+        const r = parseInt(hexColor.substring(0, 2), 16);
+        const g = parseInt(hexColor.substring(2, 4), 16);
+        const b = parseInt(hexColor.substring(4, 6), 16);
+        
+        // 補色を計算して16進文字列に戻す
+        const complementaryR = (255 - r).toString(16).padStart(2, '0').toUpperCase();
+        const complementaryG = (255 - g).toString(16).padStart(2, '0').toUpperCase();
+        const complementaryB = (255 - b).toString(16).padStart(2, '0').toUpperCase();
+        return `${complementaryR}${complementaryG}${complementaryB}`;
     }
-
 }());
