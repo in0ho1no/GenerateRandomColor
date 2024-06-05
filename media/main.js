@@ -79,7 +79,7 @@
         input.addEventListener('change', (e) => {
             const target = e.target;
             if (target instanceof HTMLInputElement) {
-                const convColor = convInput2HexColor(target.value);
+                const convColor = convertInput2HexColor(target.value);
                 updateInputList(convColor);
             }
         });
@@ -154,7 +154,7 @@
 
     /**
      * 任意の色コードによる色の生成欄を設ける
-     * @param {string} color
+     * @param {string} color - 16進文字列の色コード
      */
     function updateInputList(color) {
         const ul = document.querySelector('.field-list');
@@ -163,9 +163,22 @@
         }
         ul.textContent = '';
 
-        const inputColorField = createInputColorField(color);
+        const li = document.createElement('li');
+        li.className = 'color-row';
 
-        ul.appendChild(inputColorField);
+        // 各フィールドを作成
+        const inputColorField = createInputColorField(color);
+        const colorPreviewBG = createColorPreview(converRGB2HexColor(inputColorField.style.backgroundColor));
+        const colorPreviewTXT = createColorPreview(converRGB2HexColor(inputColorField.style.color));
+        const swapColorButton = createSwapColorButton(inputColorField);
+
+        // 作成したフィールドを配置する
+        li.appendChild(colorPreviewBG);
+        li.appendChild(colorPreviewTXT);
+        li.appendChild(inputColorField);
+        li.appendChild(swapColorButton);
+
+        ul.appendChild(li);
     }
 
     /**
@@ -188,7 +201,7 @@
             const colorTxT = colors[index+1].value;
 
             const li = document.createElement('li');
-            li.className = 'color-entry';
+            li.className = 'color-row';
 
             const colorPreviewBG = createColorPreview(colorBG);
             li.appendChild(colorPreviewBG);
@@ -215,7 +228,7 @@
      * @param {string} inputStr - 入力された文字列
      * @returns {string} 変換された16進文字列6桁の色コード
      */
-    function convInput2HexColor(inputStr) {
+    function convertInput2HexColor(inputStr) {
         if (!inputStr) {
             return '000000';
         }
@@ -226,6 +239,20 @@
         // 16進文字列6桁にする
         valueConv = valueConv.substring(0, COLOR_STRING_MAX_LEN).padStart(COLOR_STRING_MAX_LEN, '0');
         return valueConv;
+    }
+
+    /**
+     * 入力されたRGBを、16進文字列6桁の色コードに変換して返す。
+     * @param {string} rgbColor - RGB形式の色コード
+     * @returns {string} 変換された16進文字列6桁の色コード
+     */
+    function converRGB2HexColor(rgbColor){
+        const rowColor = rgbColor.replace(/[rgb(|)]/g,"");
+        const splitColor = rowColor.split(", ");
+        const hexR = parseInt(splitColor[0], 10).toString(16).padStart(2, '0').toUpperCase();
+        const hexG = parseInt(splitColor[1], 10).toString(16).padStart(2, '0').toUpperCase();
+        const hexB = parseInt(splitColor[2], 10).toString(16).padStart(2, '0').toUpperCase();
+        return `${hexR}${hexG}${hexB}`;
     }
 
     /**
