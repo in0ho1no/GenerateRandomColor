@@ -2,22 +2,37 @@ body {
 	background-color: transparent;
 }
 
+.add-color-button {
+	display: block;
+	border: none;
+	margin: 3px auto;
+}
+
+.field-list {
+	list-style: none;
+	padding: 0;
+}
+
 .color-list {
 	list-style: none;
 	padding: 0;
 }
 
-.color-entry {
+.color-row {
 	width: 100%;
 	display: flex;
-	margin-bottom: 0.4em;
-	border: 1px solid var(--vscode-input-border);
+	margin-bottom: 0.3em;
+}
+
+.color-input {
+	width: 100%;
+	min-height: 2em;
+	display: flex;
+	margin-right: 2px;
 }
 
 .color-preview {
 	width: 2em;
-	height: 2em;
-	/* border-right: 2px solid black; */
 	margin-right: 2px;
 }
 
@@ -28,21 +43,15 @@ body {
 
 .sample-text {
 	width: 100%;
+	min-height: 2em;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	margin-right: 2px;
 }
 
-.add-color-button {
-	display: block;
-	border: none;
-	margin: 3px auto;
-}
-
 .swap-color {
 	width: 2em;
-	height: 2em;
 	display: flex;
 	justify-content: center;
 	align-items: center;
