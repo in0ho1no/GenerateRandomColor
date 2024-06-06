@@ -13,13 +13,19 @@
     const vscode = acquireVsCodeApi();
 
     // 保存された状態を取得し、存在しない場合は初期化
-    const oldState = vscode.getState() || { colors: [] };
+    const oldState = vscode.getState() || { color: '000000', colors: [] };
+
+    /**
+     * 色
+     * @type {string}
+     */
+    let colorVSC = oldState.color;
 
     /**
      * 色のリスト
      * @type {Array<{ value: string }>}
      */
-    let colors = oldState.colors;
+    let colorsVSC = oldState.colors;
 
     /**
      * 拡張機能からWebviewへのメッセージを処理するイベントリスナーを追加
@@ -34,8 +40,11 @@
                 }
             case 'clearColors':
                 {
-                    colors = [];
-                    updateColorList(colors);
+                    // 使い勝手悪くなるので入力フィールドは初期化しない
+                    // colorVSC = '000000';
+                    // updateInputList(colorVSC);
+                    colorsVSC = [];
+                    updateColorList(colorsVSC);
                     break;
                 }
 
@@ -46,7 +55,7 @@
     createAddColorButton();
 
     // 色リストを作成
-    createColorList(colors);
+    createMainView(colorVSC, colorsVSC);
 
     /**
      * 色追加ボタンを作成する。
@@ -77,10 +86,16 @@
         input.style.backgroundColor = `#${color}`;
         input.style.color = `#${getComplementaryColor(color)}`;
         input.addEventListener('change', (e) => {
-            const target = e.target;
-            if (target instanceof HTMLInputElement) {
-                const convColor = convertInput2HexColor(target.value);
+            // テキスト変更時に見た目を更新する
+            if (e.target instanceof HTMLInputElement) {
+                const convColor = convertInput2HexColor(e.target.value);
                 updateInputList(convColor);
+            }
+        });
+        input.addEventListener('click', (e) => {
+            // クリック時にテキストを選択状態とする
+            if (e.target instanceof HTMLInputElement) {
+                e.target.select();
             }
         });
         return input;
@@ -92,12 +107,13 @@
      * @returns {HTMLDivElement} - 作成された色プレビュー領域
      */
     function createColorPreview(color){
+        const colorUC = color.toUpperCase();
         const colorPreview = document.createElement('div');
         colorPreview.className = 'color-preview';
-        colorPreview.style.backgroundColor = `#${color}`;
+        colorPreview.style.backgroundColor = `#${colorUC}`;
         colorPreview.addEventListener('click', () => {
-            onColorClicked(color);
-            navigator.clipboard.writeText(color);
+            onColorClicked(colorUC);
+            navigator.clipboard.writeText(colorUC);
         });
         return colorPreview;
     }
@@ -145,10 +161,11 @@
     }
 
     /**
-     * @param {Array<{ value: string }>} colors
+     * @param {string} color - 表示する16進文字列6桁の色コード
+     * @param {Array<{ value: string }>} colors - 表示する色の配列
      */
-    function createColorList(colors) {
-        updateInputList('000000');
+    function createMainView(color, colors) {
+        updateInputList(color);
         updateColorList(colors);
     }
 
@@ -179,6 +196,9 @@
         li.appendChild(swapColorButton);
 
         ul.appendChild(li);
+
+        // 色を更新する
+        updateVScodeState('color', color);
     }
 
     /**
@@ -219,7 +239,7 @@
         }
 
         // 色リストを更新する
-        vscode.setState({ colors: colors });
+        updateVScodeState('colors', colors);
     }
 
     /**
@@ -267,11 +287,11 @@
      * ランダムな色とその補色からなるペアを生成してリストに追加する
      */
     function generateColorPair() {
-        if (MAX_COLOR_LIST*2 > colors.length) {
+        if (MAX_COLOR_LIST*2 > colorsVSC.length) {
             const randomColor = getRandomColor();
-            colors.push({ value: randomColor });
-            colors.push({ value: getComplementaryColor(randomColor) });
-            updateColorList(colors);
+            colorsVSC.push({ value: randomColor });
+            colorsVSC.push({ value: getComplementaryColor(randomColor) });
+            updateColorList(colorsVSC);
         }
     }
 
@@ -311,5 +331,24 @@
         const complementaryG = (255 - g).toString(16).padStart(2, '0').toUpperCase();
         const complementaryB = (255 - b).toString(16).padStart(2, '0').toUpperCase();
         return `${complementaryR}${complementaryG}${complementaryB}`;
+    }
+
+    /**
+     * 内部状態を更新する
+     * @param {string} key - 状態を識別するためのキー
+     * @param {any} value - 更新したい値
+     */
+    function updateVScodeState(key, value) {
+        // 現在の状態を取得
+        const currentState = vscode.getState() || {};
+
+        // 状態を更新
+        const newState = {
+            ...currentState,  // 既存の状態をコピー
+            [key]: value,  // 新しい値を追加または更新
+        };
+
+        // 状態を保存
+        vscode.setState(newState);
     }
 }());
