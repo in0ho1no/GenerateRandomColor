@@ -64,6 +64,11 @@ class ColorsViewProvider implements vscode.WebviewViewProvider {
 						vscode.window.showInformationMessage(`debug! ${data.value}`);
 						break;
 					}
+				case 'debug2':
+					{
+						vscode.window.showInformationMessage(`debug2! ${data.value}`);
+						break;
+					}
 			}
 		});
 	}
@@ -114,6 +119,9 @@ class ColorsViewProvider implements vscode.WebviewViewProvider {
 				<title>Cat Colors</title>
 			</head>
 			<body>
+				<ul class="field-list">
+				</ul>
+
 				<button class="add-color-button">Generate Random Color</button>
 
 				<ul class="color-list">
